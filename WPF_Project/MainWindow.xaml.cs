@@ -17,107 +17,100 @@ using System.Data;
 
 namespace Wpf__Test
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         DataBase conn = new DataBase();
-        
+        DataTable table = new DataTable();
 
         public MainWindow()
         {
             InitializeComponent();
             conn.OpenConn();
+            table.Columns.Add("Код 'Прихода'".ToString());  //DataGridView
+            table.Columns.Add("Сумма".ToString());
+            table.Columns.Add("Остаток (До)".ToString());
+            table.Columns.Add("Остаток (После)".ToString());
+            table.Columns.Add("Код заказа".ToString());
+            table.Columns.Add("Сумма заказа".ToString());
+            table.Columns.Add("Сумма оплаты (До)".ToString());
+            table.Columns.Add("Сумма оплаты (После)".ToString());
             Upd();
         }
 
         private void Upd()
         {
-
-            CMB1.Items.Clear(); CMB2.Items.Clear();
-            SqlCommand cmd = new SqlCommand("select Add_ID, Add_Sum, Add_Minus from AddMoney_db;", conn.GetConn());
-            SqlCommand cmd2 = new SqlCommand("select Ord_ID, Ord_Sum, Ord_Plus from Orders_db;", conn.GetConn());
-
+            CMB1.Items.Clear(); CMB2.Items.Clear();             //обновление данных ComboBox1 (доступных для использования 'Приходов денег')
+            SqlCommand cmd = new SqlCommand("select Add_ID, Add_Sum, Add_Minus from AddMoney_db where Add_Minus>0;", conn.GetConn());
+            SqlCommand cmd2 = new SqlCommand("select Ord_ID, Ord_Sum, Ord_Plus from Orders_db where Ord_Sum>Ord_Plus;", conn.GetConn());
             SqlDataReader rdr = cmd.ExecuteReader();
-            if (rdr.HasRows) {
-                while (rdr.Read()) {
+
+            if (rdr.HasRows) {  while (rdr.Read()) {
                     CMB1.Items.Add(rdr.GetInt32(0).ToString() + ") Сумма: " + rdr.GetInt32(1).ToString() + ", Остаток: " + rdr.GetInt32(2).ToString()); } }
-            else { CMB1.Text = "Не найдено данных"; }
             rdr.Close();
 
-            rdr = cmd2.ExecuteReader();
-            if (rdr.HasRows) {
-                while (rdr.Read()){
-                    CMB2.Items.Add(rdr.GetInt32(0).ToString() + ") Сумма: " + rdr.GetInt32(1).ToString() + ", Оплата: " + rdr.GetInt32(2).ToString()); } }
-            else { CMB2.Text = "Не найдено данных"; }
+            rdr = cmd2.ExecuteReader();                        //обновление данных ComboBox2 (доступных для оплаты заказов)
+            if (rdr.HasRows) { while (rdr.Read()){
+                    CMB2.Items.Add(rdr.GetInt32(0).ToString() + ") Сумма: " + rdr.GetInt32(1).ToString() + ", Оплачено: " + rdr.GetInt32(2).ToString()); } }
             rdr.Close();
-            SqlCommand GRD = new SqlCommand("select Add_Date AS 'Дата', Add_Sum AS 'Приход денег (Всего)', Add_Minus 'Остаток', Ord_Sum " + 
-                "'Сумма заказа (Всего)', Ord_Plus 'Оплачено', Payment_Sum 'Сумма оплаты' from AddMoney_db a join Payments_db b on a.Add_ID = b.Add_ID " +
-                "join Orders_db c on b.Ord_ID = c.Ord_ID", conn.GetConn());
-
-            GRD.ExecuteNonQuery();
-            SqlDataAdapter dataAdp = new SqlDataAdapter(GRD);
-            DataTable dt = new DataTable("Students"); // В скобках указываем название таблицы
-            dataAdp.Fill(dt);
-            DataGRD.ItemsSource = dt.DefaultView; // Сам вывод 
-
-            //conn.CloseConn();
         }
 
-        private void Butt1_Click(object sender, RoutedEventArgs e)
+        private void Butt1_Click(object sender, RoutedEventArgs e) //добавить Приход денег
         {
             SqlCommand Insert1 = new SqlCommand("insert into AddMoney_db values ('" + DateTime.Today.Date.ToString("d") + "', " + TBX_Money.Text.ToString() + ", " + TBX_Money.Text.ToString() + ")", conn.GetConn());
-            bool ch = true; 
-            foreach (char c in TBX_Order.Text.ToString()) { if (c < '0' || c > '9') { ch = false; } }
 
-            if (ch) 
-            {
-                int qq = Insert1.ExecuteNonQuery();
-                Upd();
-                MessageBox.Show("Приход денег = " + TBX_Money.Text.ToString() + " добавлен");
-                TBX_Money.Text = "";
-            }
-            else { MessageBox.Show("Пожалуйста, введите целое число"); }
+            try { int qq = Insert1.ExecuteNonQuery(); MessageBox.Show("Запись добавлена"); }
+            catch (SqlException ex) { MessageBox.Show("Получена ошибка: " + ex.Message); }
+
+            Upd();
+            TBX_Money.Clear();
         }
 
-        private void Butt2_Click(object sender, RoutedEventArgs e)
+        private void Butt2_Click(object sender, RoutedEventArgs e) //добавить заказ
         {
             SqlCommand Insert2 = new SqlCommand("insert into Orders_db values ('" + DateTime.Today.Date.ToString("d") + "', " + TBX_Order.Text.ToString() + ", 0)", conn.GetConn());
-            bool ch = true;
-            foreach (char c in TBX_Order.Text.ToString()) {  if (c < '0' || c > '9') { ch = false; } }
             
-            if (ch)
-            {
-                int qq = Insert2.ExecuteNonQuery();
-                Upd();
-                MessageBox.Show("Заказ с суммой = " + TBX_Order.Text.ToString() + " добавлен");
-                TBX_Order.Text = "";
-            }
-            else { MessageBox.Show("Пожалуйста, введите целое число"); }
+            try { int qq = Insert2.ExecuteNonQuery(); MessageBox.Show("Запись добавлена"); }
+            catch (SqlException ex) { MessageBox.Show("Получена ошибка: " + ex.Message); }
+
+            Upd();
+            TBX_Order.Clear();
         }
 
         private void Butt3_Click(object sender, RoutedEventArgs e)
         {
-            var CMB1_ID = CMB1.SelectedItem.ToString().Split(new[] { ' ' }, 6);
-            var CMB2_ID = CMB2.SelectedItem.ToString().Split(new[] { ' ' }, 6);
-
-            SqlCommand Updd = new SqlCommand("insert into Payments_db values (" + (CMB2_ID[0].Remove(CMB2_ID[0].Length-1)) + ", " + (CMB1_ID[0].Remove(CMB1_ID[0].Length-1)) + ", " + TBX3.Text.ToString() + ");", conn.GetConn());
-
-            int qq1 = int.Parse(CMB1_ID[2].Remove(CMB1_ID[2].Length - 1));
-            int qq2 = int.Parse(CMB2_ID[2].Remove(CMB2_ID[2].Length - 1));
-
-            if (int.Parse(CMB1_ID[4].ToString()) < int.Parse(CMB2_ID[4])) { MessageBox.Show("Оплата не должна превышать остатка"); }
-            else if (qq2 < int.Parse(CMB2_ID[4])) { MessageBox.Show("Сумма оплаты превышает оплату"); }
-            else if (qq1 < int.Parse(CMB1_ID[4])) { MessageBox.Show("Сумма остатка превышает оплату"); ; }
-            else
+            if (CMB1.SelectedIndex > -1 && CMB2.SelectedIndex > -1)
             {
-                int qq = Updd.ExecuteNonQuery();
-                MessageBox.Show("Оплата на сумму " + TBX3.Text.ToString() + " выполнена");
-                TBX3.Text = "";
-                CMB1.SelectedItem = 0;
-                Upd();
+                var CMB1_ID = CMB1.SelectedItem.ToString().Split(new[] { ')' }, 2); // получение выбранных в ComboBox номеров
+                var CMB2_ID = CMB2.SelectedItem.ToString().Split(new[] { ')' }, 2);
+
+                SqlCommand Updd = new SqlCommand("insert into Payments_db values (" + CMB2_ID[0] + ", " + CMB1_ID[0] + ", " + TBX3.Text.ToString() + ");", conn.GetConn());
+
+                try 
+                {
+                    int qq = Updd.ExecuteNonQuery();
+
+                    var num1 = CMB1_ID[1].Split(new[] { ' ' }, 6);
+                    var num2 = CMB2_ID[1].Split(new[] { ' ' }, 6);
+
+                    DataRow dr = table.NewRow();                                       //добавление данных DataGridView
+                    dr["Код 'Прихода'"] = CMB1_ID[0].ToString();
+                    dr["Сумма"] = num1[2].Remove(num1[2].Length - 1);
+                    dr["Остаток (До)"] = num1[4];
+                    dr["Остаток (После)"] = int.Parse(num1[4]) - int.Parse(TBX3.Text);
+                    dr["Код заказа"] = CMB2_ID[0].ToString();
+                    dr["Сумма заказа"] = num2[2].Remove(num2[2].Length - 1);
+                    dr["Сумма оплаты (До)"] = num2[4];
+                    dr["Сумма оплаты (После)"] = int.Parse(num2[4]) + int.Parse(TBX3.Text);
+                    table.Rows.Add(dr);
+                    DataGRD.ItemsSource = table.DefaultView;
+
+                    TBX3.Clear();
+                    Upd();
+                }
+                catch (SqlException ex) { MessageBox.Show("Получена ошибка: " + ex.Message); }
+
             }
+            else { MessageBox.Show("Выберите денные"); }
         }
     }
 }

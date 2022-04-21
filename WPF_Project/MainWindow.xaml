@@ -39,7 +39,7 @@
         <Button Click="Butt3_Click" Content="Оплатить заказ" Grid.Row="1" Height="40" Width="307" Margin="423,87,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <Rectangle HorizontalAlignment="Left" Margin="0,33,0,-23" Grid.Row="2" Stroke="Black" Width="750" />
         <Label Content="Просмотр истории платежей:" Background="LightGray"  Grid.Row="2" Height="25"  HorizontalAlignment="Left" VerticalAlignment="Top"  Width="200" Margin="8,15,0,0"/>
-        <DataGrid AutoGenerateColumns="True" x:Name="DataGRD" HorizontalAlignment="Left" Grid.Row="2" Height="150" Width="720" Margin="10,48,20,-8"/>
+        <DataGrid AutoGenerateColumns="True" x:Name="DataGRD" HorizontalAlignment="Left" Grid.Row="2" Height="150" Width="720" Margin="10,48,20,-8" IsReadOnly="True"></DataGrid>
         <Label HorizontalAlignment="Left" Content="Укажите сумму оплаты:" Margin="10,82,0,0" Grid.Row="1" VerticalAlignment="Top"/>
         <TextBox x:Name="TBX3" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="166,82,0,0" Grid.Row="1" Height="25" Width="150"/>
 
